@@ -70,12 +70,6 @@ function prepareData() {
 
         let bookingDate = null;
 
-
-        /* -------------------------------------------------
-           Excel Serial Date
-           เช่น 45678
-        ------------------------------------------------- */
-
         if (typeof row.Booking_Date === "number") {
 
             const parsed =
@@ -95,27 +89,17 @@ function prepareData() {
 
         } else {
 
-            /* -------------------------------------------------
-               กรณีวันที่เป็นข้อความ
-            ------------------------------------------------- */
-
             const value =
                 String(
                     row.Booking_Date || ""
                 ).trim();
 
-
             if (value) {
-
-                /* ---------------------------------------------
-                   DD/MM/YYYY หรือ DD-MM-YYYY
-                --------------------------------------------- */
 
                 const match =
                     value.match(
                         /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
                     );
-
 
                 if (match) {
 
@@ -137,7 +121,6 @@ function prepareData() {
                             10
                         );
 
-
                     bookingDate =
                         new Date(
                             year,
@@ -147,13 +130,8 @@ function prepareData() {
 
                 } else {
 
-                    /* -----------------------------------------
-                       กรณี YYYY-MM-DD
-                    ----------------------------------------- */
-
                     const parsedDate =
                         new Date(value);
-
 
                     if (
                         !isNaN(
@@ -167,7 +145,6 @@ function prepareData() {
                 }
             }
         }
-
 
         return {
             ...row,
@@ -288,8 +265,6 @@ function getFilteredData() {
 
 /* =========================================================
    6. ข้อมูลสำหรับ Doughnut
-      ใช้ Filter ประเทศ
-      แต่ไม่ใช้ Filter ประเภทการเดินทาง
 ========================================================= */
 
 function getTransportData() {
@@ -392,81 +367,63 @@ function updateSummary(data) {
     const totalBookings =
         data.length;
 
-    const totalTravellers =
-        data.reduce(
-            (sum, row) =>
-                sum + row.Number_of_Travellers,
-            0
-        );
-
-    const totalCost =
-        data.reduce(
-            (sum, row) =>
-                sum + row.Total_Trip_Cost,
-            0
-        );
-
-    const averageRating =
+    const averageCost =
         data.length
             ? data.reduce(
                 (sum, row) =>
-                    sum + row.Customer_Rating,
+                    sum + row.Total_Trip_Cost,
                 0
             ) / data.length
             : 0;
+
+    const averageNights =
+        data.length
+            ? data.reduce(
+                (sum, row) =>
+                    sum + row.Number_of_Nights,
+                0
+            ) / data.length
+            : 0;
+
 
     const elements = {
 
         bookings:
             document.getElementById("totalBookings"),
 
-        travellers:
-            document.getElementById("totalTravellers"),
+        topCountry:
+            document.getElementById("topCountry"),
 
-        cost:
-            document.getElementById("totalCost"),
+        avgCost:
+            document.getElementById("avgCost"),
 
-        rating:
-            document.getElementById("averageRating")
+        avgNights:
+            document.getElementById("avgNights")
     };
+
 
     animateNumber(
         elements.bookings,
         totalBookings
     );
 
-    animateNumber(
-        elements.travellers,
-        totalTravellers
+
+    animateDecimal(
+        elements.avgCost,
+        Number(
+            elements.avgCost.dataset.value || 0
+        ),
+        averageCost
     );
 
-    if (elements.cost) {
 
-        const oldValue =
-            Number(
-                elements.cost.dataset.value || 0
-            );
-
-        animateDecimal(
-            elements.cost,
-            oldValue,
-            totalCost
-        );
-    }
-
-    if (elements.rating) {
-
-        const oldValue =
-            Number(
-                elements.rating.dataset.value || 0
-            );
-
-        animateDecimal(
-            elements.rating,
-            oldValue,
-            averageRating
-        );
-    }
+    animateDecimal(
+        elements.avgNights,
+        Number(
+            elements.avgNights.dataset.value || 0
+        ),
+        averageNights
+    );
 }
 
 
@@ -683,8 +640,6 @@ function getScatterData(data) {
 
 /* =========================================================
    16. สร้าง Chart ครั้งแรก
-      สร้างเพียงครั้งเดียว
-      ห้าม destroy ตอน Filter
 ========================================================= */
 
 function createCharts() {
@@ -1511,13 +1466,6 @@ function updateTopCountry(data) {
 ========================================================= */
 
 function animateDashboardUpdate() {
-
-    /*
-       สำคัญ:
-       ไม่ destroy chart
-       ไม่ซ่อน chart
-       แค่ update ข้อมูลเดิม
-    */
 
     const dashboard =
         document.querySelector(
